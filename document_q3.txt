@@ -1,0 +1,12 @@
+The compilations for this is exactly the same the last one
+
+
+please refer to the previous questions txt file to see. 
+
+
+I could not for the life of me get the padding for the pictures to work, thus no pictures will be displayed.
+
+
+the open file browser works though.
+
+
