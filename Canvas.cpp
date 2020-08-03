@@ -13,31 +13,23 @@ void Canvas::Draw()
       wxFrame* frame = new wxFrame(nullptr, -1,"WAV Fade_in _out", wxPoint(50,50), wxSize(2000,500));
 
       //sets up the canvas frame
+      //
       Canvas* canvas = new Canvas(reinterpret_cast<wxFrame*>(frame));
-      canvas->file_path = this->file_path;
-      canvas->bmp = this->bmp;
+      const char * filepath = this->file_path.c_str();
+      canvas->bmp.Reader(const_cast<char*>(filepath));
       
       // making the new scroll frame
 
-
-      frame->Layout();
       frame->Show();
 }
 //painting event
 BEGIN_EVENT_TABLE(Canvas, wxPanel)
 
-      EVT_PAINT(Canvas::paintEvent)
-
-END_EVENT_TABLE()
+      EVT_PAINT(Canvas::paintEvent) END_EVENT_TABLE()
 
 void Canvas::paintEvent(wxPaintEvent & evt)
 {
     wxPaintDC dc(this);
-    render(dc);
-}
-void Canvas::paintNow()
-{
-    wxClientDC dc(this);
     render(dc);
 }
 
@@ -46,79 +38,77 @@ void Canvas::render(wxDC&  dc)
 {
     // draw some text
      
+    
     wxBrush brush;
-    
-    //construct image matrix
+    //construct image matri
+   vector<vector<rgb> > rgb_vec = this->bmp.construct_DCT(this->bmp.data,this->bmp.head.height, this->bmp.head.width);
 
-          brush.SetColour(255,255,255);
-          dc.SetBrush(brush);
-          dc.DrawRectangle(this->bmp.head.height , this->bmp.head.width,3,3);
+    for(int i = 0; i < this->bmp.head.height*this->bmp.head.width*3; i+=3)
+    {
+           uint8_t blue = this->bmp.data[i];
+           uint8_t green = this->bmp.data[i+1];
+           uint8_t red= this->bmp.data[i+2];
+           uint32_t rgb; 
+           uint32_t mask;
+           //ALPHA
+           int Y  = (int)( 0.299   * red + 0.587   * green + 0.114   * blue);
+           int cb = (int)(-0.16874 * red - 0.33126 * green + 0.50000 * blue)+128;
+           int cr = (int)( 0.50000 * red - 0.41869 * green - 0.08131 * blue)+128;
+
+   //        cout << "y: " << Y << " cb: "<<cb << " cr: " << cr << endl;  
+           
+           cb = cb - 128;
+           cr = cr - 128;
+           int r = (int) Y + 45 * (cr) / 32 ;
+           int g = (int) Y - (11 * (cb)  + 23 * (cr)) / 32 ;
+           int b = (int) Y + 113 * (cb)/ 64 ;
+
+           if(r < 0)  r = 0;
+           if(r > 255)  r = 255;
+           if(g < 0)  g = 0;
+           if(g > 255)  g = 255;
+           if(b < 0)  b = 0;
+           if(b > 255)  b = 255;
+
+
+           dc.SetPen( wxPen( wxColor(red,green,blue), 2 ) ); // 10-pixels-thick pink outline
+
+
+           float pad = (float)i/3.0;
+           uint32_t x = (uint32_t) pad % this->bmp.head.width;
+           uint32_t y = (uint32_t) pad / this->bmp.head.width;
+
+           dc.DrawRectangle(x,this->bmp.head.height - y ,2,2);
+      
+    }
+
+   cout << rgb_vec[0].size() << endl;
+   for(int i = 0 ; i < rgb_vec.size()-3 ; i++)
+   {
+     for(int j = 0; j < rgb_vec[i].size()-3; j++)
+     {
+          dc.SetPen( wxPen( wxColor(rgb_vec[i][j].r,rgb_vec[i][j].g,rgb_vec[i][j].b), 2 ) );
+          dc.DrawRectangle(j+this->bmp.head.width + 100, this->bmp.head.height-i,1,1);
+     }
+   }
+
+
+   // for(int i = 0; i < this->bmp.head.height*this->bmp.head.width*3; i+=3)
+   // {
+   //        uint8_t blue = this->bmp.data[i];
+   //        uint8_t green = this->bmp.data[i+1];
+   //        uint8_t red= this->bmp.data[i+2];
+
+   //        dc.SetPen( wxPen( wxColor(red,green,blue), 2 ) ); // 10-pixels-thick pink outline
+
+
+   //        float pad = (float)i/3.0;
+   //        uint32_t x = (uint32_t) pad % this->bmp.head.width;
+   //        uint32_t y = (uint32_t) pad / this->bmp.head.width;
+
+   //        dc.DrawRectangle(x+this->bmp.head.width + 500 ,this->bmp.head.height - y ,2,2);
+   //   
+   // }
           
-
-
-    //2000x300 window
-    //
-    //
-    
-    //dc.SetBrush(*wxGREEN_BRUSH); // green filling
-    //dc.SetPen( wxPen( wxColor(0,0,0), 1 ) ); // 5-pixels-thick red outline
-    //int samples2=0;
-    //
-    // wxFile file(this->file_path);
-    // char sample[128];
-
-    // //12 bytes of RIF header
-    // char RIFBuffer[12];
-    // //24 bytes FMT 
-    // char FMTBuffer[24];
-    // //6 bytes of Data
-    // char DATABuffer[6];
-
-    // file.Read(RIFBuffer, 12);
-    // file.Read(FMTBuffer, 24);
-    // file.Read(DATABuffer, 6);
-    // // seek the next 42 bytes since thats our actual data
-    // file.Seek(42);
-    // int i= 0;
-    // int k =1;
-    // std::vector<int> buffer;
-
-    // while(!file.Eof())
-    // {
-    //    std::cout<< "k is : "<< k <<std::endl;
-    //    std::cout<< "i is : "<< i <<std::endl;
-    //    file.Read(sample,2); 
-    //    int samples=reinterpret_cast<char>(sample[k]);
-    //    k++;
-    //    //scale
-    //    buffer.push_back(samples*2);
-    //    i+=1200;
-    //    //dc.DrawLine(i/4,samples2*2+500,(i+1)/4,samples*2+500);
-    //  }
-    // std::cout <<"i made it out:";
-
-    // for(int i = 0 ; i < buffer.size(); i += 1200)
-    // {
-    //    dc.DrawLine(i/4,buffer[i]+500,(i+1)/4,buffer[i]+500);
-    // }
-
-    // draw some text
-    //dc.DrawText(this->file_path, 40, 60);
-
-    //// draw a circle
-    //dc.SetBrush(*wxGREEN_BRUSH); // green filling
-    //dc.SetPen( wxPen( wxColor(255,0,0), 5 ) ); // 5-pixels-thick red outline
-    //dc.DrawCircle( wxPoint(200,100), 25 /* radius */ );
-
-    //// draw a rectangle
-    //dc.SetBrush(*wxBLUE_BRUSH); // blue filling
-    //dc.SetPen( wxPen( wxColor(255,175,175), 10 ) ); // 10-pixels-thick pink outline
-    //dc.DrawRectangle( 300, 100, 400, 200 );
-
-    //// draw a line
-    //dc.SetPen( wxPen( wxColor(0,0,0), 3 ) ); // black line, 3 pixels thick
-    //dc.DrawLine( 300, 100, 700, 300 ); // draw line across the rectangle
-
-    // Look at the wxDC docs to learn how to draw other stuff
 }
 

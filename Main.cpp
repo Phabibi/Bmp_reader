@@ -65,13 +65,13 @@ void MainFrame::OpenFile(wxCommandEvent& WXUNUSED(event))
               CurrentDocPath = OpenDialog->GetPath();
               const char* path  = CurrentDocPath.mb_str();
 
-              Header head;
-              Bmp_reader bmp;
               //rip the const
-              bmp.Reader(head, const_cast<char*>(path));
 
-              Canvas* canvas = new Canvas(reinterpret_cast<wxFrame*>(this));
-              canvas->bmp = bmp;
+              wxFrame* frame = new wxFrame(nullptr, -1,"WAV Fade_in _out", wxPoint(50,50), wxSize(2000,500));
+              Canvas* canvas = new Canvas(reinterpret_cast<wxFrame*>(frame));
+              //canvas->bmp.Reader(const_cast<char*>(path));
+
+              //std::cout<<"i get here " << canvas->bmp.head.height << std::endl;
               canvas->file_path = CurrentDocPath;
               canvas->Draw();
 
